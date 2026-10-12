@@ -7,7 +7,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-dvh">
-      <Navbar userName={user.name ?? "there"} />
+      <Navbar user={{ name: user.name, email: user.email }} />
       <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
     </div>
   );
