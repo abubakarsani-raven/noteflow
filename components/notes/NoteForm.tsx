@@ -10,6 +10,7 @@ import {
   getMentionItems,
   type MentionItem,
 } from "@/components/notes/SmartMentionPopup";
+import { NoteContentRenderer } from "@/components/notes/NoteContentRenderer";
 import type { ActionState } from "@/lib/errors";
 
 const initial: ActionState = { ok: false };
@@ -36,6 +37,7 @@ export function NoteForm({
 
   const [title, setTitle] = useState(defaultTitle);
   const [content, setContent] = useState(defaultContent);
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
 
   // Smart @ mention state
   const [mentionState, setMentionState] = useState<{
@@ -63,11 +65,9 @@ export function NoteForm({
     const lastAtPos = textBeforeCursor.lastIndexOf("@");
 
     if (lastAtPos !== -1) {
-      // Ensure there are no spaces or linebreaks between @ and cursor (or allow short query)
       const queryText = textBeforeCursor.slice(lastAtPos + 1);
       const prevChar = lastAtPos > 0 ? textBeforeCursor[lastAtPos - 1] : " ";
 
-      // Only trigger if @ is at start of line or preceded by whitespace
       if ((prevChar === " " || prevChar === "\n") && !queryText.includes("\n")) {
         setMentionState({
           isOpen: true,
@@ -98,7 +98,6 @@ export function NoteForm({
     setContent(updatedContent);
     setMentionState((prev) => ({ ...prev, isOpen: false }));
 
-    // Reset cursor position right after inserted mention
     setTimeout(() => {
       textarea.focus();
       const newCursorPos = beforeAt.length + replacement.length;
@@ -141,7 +140,6 @@ export function NoteForm({
     }
   }
 
-  // Quick action shortcut pills
   function insertShortcut(text: string) {
     if (!textareaRef.current) return;
     const textarea = textareaRef.current;
@@ -158,6 +156,9 @@ export function NoteForm({
       textarea.setSelectionRange(newPos, newPos);
     }, 0);
   }
+
+  // Check if content has special tokens to show live token preview
+  const hasSpecialTokens = content.includes("@") || content.includes("[[");
 
   return (
     <form action={formAction} className="mt-6 max-w-2xl space-y-6">
@@ -178,96 +179,158 @@ export function NoteForm({
           maxLength={MAX_TITLE}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Untitled note…"
-          className="mt-1.5 w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3.5 py-2.5 text-base shadow-2xs transition-colors focus:border-[var(--color-moss)]"
+          className="mt-1.5 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-2.5 text-base shadow-2xs transition-colors focus:border-[var(--color-moss)]"
         />
         <FieldError messages={state.fieldErrors?.title} />
       </div>
 
-      {/* Content */}
+      {/* Content Section with Tabs */}
       <div className="relative" ref={containerRef}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-1">
           <label htmlFor="content" className="text-sm font-medium text-[var(--color-ink)]">
             Content
           </label>
-          <span className="text-xs text-[var(--color-muted)]">
-            Type <span className="font-semibold text-[var(--color-moss)]">@</span> for smart dates, tags & references
-          </span>
+
+          {/* Segmented Tab Control */}
+          <div className="inline-flex rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setActiveTab("edit")}
+              className={`rounded-md px-2.5 py-1 transition-all ${
+                activeTab === "edit"
+                  ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-2xs"
+                  : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              ✍️ Write
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("preview")}
+              className={`rounded-md px-2.5 py-1 transition-all ${
+                activeTab === "preview"
+                  ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-2xs"
+                  : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              👁️ Formatted View
+            </button>
+          </div>
         </div>
 
-        {/* Quick shortcut pills */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted)]">
-          <span className="text-[11px] font-medium">Quick insert:</span>
-          <button
-            type="button"
-            onClick={() =>
-              insertShortcut(
-                `@${new Date().toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}`
-              )
-            }
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-2 py-0.5 text-xs transition-colors hover:border-[var(--color-moss)] hover:text-[var(--color-ink)]"
-          >
-            📅 Today
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              insertShortcut(
-                `@${new Date().toLocaleTimeString("en-US", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: true,
-                })}`
-              )
-            }
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-2 py-0.5 text-xs transition-colors hover:border-[var(--color-moss)] hover:text-[var(--color-ink)]"
-          >
-            ⏰ Time
-          </button>
-          <button
-            type="button"
-            onClick={() => insertShortcut("@todo")}
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-2 py-0.5 text-xs transition-colors hover:border-[var(--color-moss)] hover:text-[var(--color-ink)]"
-          >
-            📌 @todo
-          </button>
-          <button
-            type="button"
-            onClick={() => insertShortcut("@important")}
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-2 py-0.5 text-xs transition-colors hover:border-[var(--color-moss)] hover:text-[var(--color-ink)]"
-          >
-            ⚡ @important
-          </button>
-        </div>
+        {/* Quick Shortcut Toolbar */}
+        {activeTab === "edit" && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted)]">
+            <span className="text-[11px] font-medium">Insert token:</span>
+            <button
+              type="button"
+              onClick={() =>
+                insertShortcut(
+                  `@${new Date().toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}`
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-md border border-[#dfe5eb] bg-[#f1f4f8] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#3b4754] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+            >
+              📅 Date
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                insertShortcut(
+                  `@${new Date().toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}`
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-md border border-[#dfe5eb] bg-[#f1f4f8] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#3b4754] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+            >
+              ⏰ Time
+            </button>
+            <button
+              type="button"
+              onClick={() => insertShortcut("@todo")}
+              className="inline-flex items-center gap-1 rounded-md border border-[#cbe5dc] bg-[#edf6f3] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#235849] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+            >
+              📌 @todo
+            </button>
+            <button
+              type="button"
+              onClick={() => insertShortcut("@important")}
+              className="inline-flex items-center gap-1 rounded-md border border-[#f5dfb8] bg-[#fdf6ec] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#8c5208] shadow-2xs transition-all hover:border-[var(--color-amber)]"
+            >
+              ⚡ @important
+            </button>
+            <button
+              type="button"
+              onClick={() => insertShortcut("@idea")}
+              className="inline-flex items-center gap-1 rounded-md border border-[#d2def0] bg-[#f0f4fa] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#2b4c7e] shadow-2xs transition-all hover:border-blue-400"
+            >
+              💡 @idea
+            </button>
+          </div>
+        )}
 
         <div className="relative mt-2">
-          <textarea
-            ref={textareaRef}
-            id="content"
-            name="content"
-            rows={14}
-            value={content}
-            onChange={handleContentChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Write your note here... (Tip: type @ to reference dates, tags, or other notes)"
-            className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3.5 py-3 text-[15px] leading-relaxed shadow-2xs transition-colors focus:border-[var(--color-moss)]"
-          />
+          {activeTab === "edit" ? (
+            <>
+              <textarea
+                ref={textareaRef}
+                id="content"
+                name="content"
+                rows={13}
+                value={content}
+                onChange={handleContentChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Write your note here… (Type @ to insert special dates, tags, or note references)"
+                className="w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 text-[15px] leading-relaxed shadow-2xs transition-colors focus:border-[var(--color-moss)]"
+              />
 
-          {/* Smart @ Mention Popup */}
-          {mentionState.isOpen && (
-            <SmartMentionPopup
-              query={mentionState.query}
-              availableNotes={availableNotes}
-              selectedIndex={mentionState.selectedIndex}
-              onSelect={insertMention}
-              onClose={() => setMentionState((prev) => ({ ...prev, isOpen: false }))}
-              position={{ top: 30, left: 20 }}
-            />
+              {/* Floating Smart @ Mention Popup */}
+              {mentionState.isOpen && (
+                <SmartMentionPopup
+                  query={mentionState.query}
+                  availableNotes={availableNotes}
+                  selectedIndex={mentionState.selectedIndex}
+                  onSelect={insertMention}
+                  onClose={() => setMentionState((prev) => ({ ...prev, isOpen: false }))}
+                  position={{ top: 35, left: 15 }}
+                />
+              )}
+            </>
+          ) : (
+            /* Formatted Preview Mode */
+            <div className="min-h-[340px] w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5 text-[15px] leading-relaxed shadow-2xs">
+              {content.trim() ? (
+                <NoteContentRenderer content={content} />
+              ) : (
+                <p className="italic text-[var(--color-muted)]">No content to preview yet.</p>
+              )}
+              {/* Keep a hidden input for form submission when in preview tab */}
+              <input type="hidden" name="content" value={content} />
+            </div>
           )}
         </div>
+
+        {/* Live Highlight Token Strip (shown in edit mode if tokens are present) */}
+        {activeTab === "edit" && hasSpecialTokens && (
+          <div className="mt-2.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-2xs">
+            <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-[var(--color-muted)] uppercase tracking-wider">
+              <span>Live Formatted Tokens Preview</span>
+              <span className="text-[10px] text-[var(--color-moss)]">styled with custom font</span>
+            </div>
+            <NoteContentRenderer
+              content={content}
+              className="text-sm text-[var(--color-ink)] line-clamp-3"
+            />
+          </div>
+        )}
+
         <FieldError messages={state.fieldErrors?.content} />
       </div>
 

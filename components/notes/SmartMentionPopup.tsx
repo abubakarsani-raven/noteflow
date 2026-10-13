@@ -71,7 +71,7 @@ export function getMentionItems(notes: { id: string; title: string }[]): Mention
       label: "@todo",
       sublabel: "Action item",
       icon: "📌",
-      insertValue: "@todo ",
+      insertValue: "@todo",
     },
     {
       id: "tag-important",
@@ -79,7 +79,7 @@ export function getMentionItems(notes: { id: string; title: string }[]): Mention
       label: "@important",
       sublabel: "High priority marker",
       icon: "⚡",
-      insertValue: "@important ",
+      insertValue: "@important",
     },
     {
       id: "tag-idea",
@@ -87,7 +87,7 @@ export function getMentionItems(notes: { id: string; title: string }[]): Mention
       label: "@idea",
       sublabel: "Brainstorm or insight",
       icon: "💡",
-      insertValue: "@idea ",
+      insertValue: "@idea",
     },
     {
       id: "tag-followup",
@@ -95,7 +95,7 @@ export function getMentionItems(notes: { id: string; title: string }[]): Mention
       label: "@follow-up",
       sublabel: "Needs checking later",
       icon: "🔁",
-      insertValue: "@follow-up ",
+      insertValue: "@follow-up",
     },
   ];
 
@@ -106,7 +106,7 @@ export function getMentionItems(notes: { id: string; title: string }[]): Mention
       category: "note",
       label: note.title,
       sublabel: "Reference note",
-      icon: "📝",
+      icon: "§",
       insertValue: `[[${note.title}]]`,
     });
   });
@@ -157,15 +157,19 @@ export function SmartMentionPopup({
     <div
       ref={containerRef}
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
-      className="absolute z-50 max-h-72 w-80 overflow-y-auto rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-1.5 shadow-xl ring-1 ring-black/5"
+      className="absolute z-50 max-h-76 w-84 overflow-y-auto rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-1.5 shadow-xl ring-1 ring-black/5"
     >
-      <div className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-[var(--color-muted)] uppercase">
-        Smart Commands & References
+      <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-semibold tracking-wider text-[var(--color-muted)] uppercase">
+        <span>Smart Commands</span>
+        <span className="font-mono text-[10px] text-[var(--color-moss)]">special tokens</span>
       </div>
 
-      <div className="space-y-0.5">
+      <div className="space-y-1">
         {filteredItems.map((item, idx) => {
           const isSelected = idx === selectedIndex;
+          const isNote = item.category === "note";
+          const isDate = item.category === "date";
+
           return (
             <button
               key={item.id}
@@ -175,31 +179,63 @@ export function SmartMentionPopup({
                 e.preventDefault(); // Don't steal focus from textarea
                 onSelect(item);
               }}
-              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-all ${
                 isSelected
-                  ? "bg-[var(--color-paper)] text-[var(--color-ink)]"
-                  : "text-[var(--color-ink)] hover:bg-[var(--color-paper)]"
+                  ? "bg-[var(--color-paper)] ring-1 ring-[var(--color-line)]"
+                  : "hover:bg-[var(--color-paper)]"
               }`}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-surface)] text-sm shadow-2xs">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-surface)] text-sm shadow-2xs border border-[var(--color-line)]/50">
                 {item.icon}
               </span>
+
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.label}</p>
+                <div className="flex items-center gap-2">
+                  <p
+                    className={`truncate text-sm font-medium ${
+                      isNote
+                        ? "font-serif italic text-[var(--color-moss)]"
+                        : item.label.startsWith("@")
+                        ? "font-mono text-[13px] font-semibold text-[var(--color-ink)]"
+                        : "text-[var(--color-ink)]"
+                    }`}
+                  >
+                    {item.label}
+                  </p>
+                </div>
                 {item.sublabel && (
-                  <p className="truncate text-xs text-[var(--color-muted)]">{item.sublabel}</p>
+                  <p className="truncate text-xs text-[var(--color-muted)] font-sans">
+                    {item.sublabel}
+                  </p>
                 )}
               </div>
-              {isSelected && (
-                <span className="text-[11px] font-medium text-[var(--color-muted)]">↵ select</span>
-              )}
+
+              {/* Token Pill Preview */}
+              <div className="shrink-0 text-right">
+                <span
+                  className={`inline-block rounded-md px-1.5 py-0.5 text-[11px] ${
+                    isNote
+                      ? "font-serif italic bg-[#edf4f1] text-[var(--color-moss)] border border-[#cadad3]"
+                      : isDate
+                      ? "font-mono bg-[#f1f4f8] text-[#3b4754] border border-[#dfe5eb]"
+                      : "font-mono bg-[#fdf6ec] text-[#8c5208] border border-[#f5dfb8]"
+                  }`}
+                >
+                  {item.insertValue}
+                </span>
+              </div>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-1.5 border-t border-[var(--color-line)] px-2.5 pt-1.5 text-[10px] text-[var(--color-muted)]">
-        Use <kbd className="rounded border px-1">↑</kbd> <kbd className="rounded border px-1">↓</kbd> to navigate, <kbd className="rounded border px-1">Enter</kbd> to insert
+      <div className="mt-1.5 border-t border-[var(--color-line)] px-2.5 pt-1.5 text-[10px] text-[var(--color-muted)] flex items-center justify-between">
+        <span>
+          <kbd className="rounded border px-1">↑</kbd> <kbd className="rounded border px-1">↓</kbd> navigate
+        </span>
+        <span>
+          <kbd className="rounded border px-1">Enter</kbd> insert
+        </span>
       </div>
     </div>
   );
