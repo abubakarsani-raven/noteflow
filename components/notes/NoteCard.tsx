@@ -29,7 +29,7 @@ export function NoteCard({ note }: { note: Note }) {
         </div>
 
         <div className="mt-2.5 line-clamp-3 text-sm text-[var(--color-muted)] leading-relaxed">
-          <NoteContentRenderer content={note.content} truncate={true} />
+          <NoteContentRenderer content={note.content} truncate={true} interactiveLinks={false} />
         </div>
       </div>
 

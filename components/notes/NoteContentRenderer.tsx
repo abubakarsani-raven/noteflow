@@ -5,12 +5,14 @@ type NoteContentRendererProps = {
   content: string;
   className?: string;
   truncate?: boolean;
+  interactiveLinks?: boolean;
 };
 
 export function NoteContentRenderer({
   content,
   className = "",
   truncate = false,
+  interactiveLinks = true,
 }: NoteContentRendererProps) {
   const displayContent = truncate && content.length > 180 ? `${content.slice(0, 180)}…` : content;
 
@@ -30,6 +32,18 @@ export function NoteContentRenderer({
         // 1. Note cross-reference: [[Note Title]]
         if (part.startsWith("[[") && part.endsWith("]]")) {
           const title = part.slice(2, -2).trim();
+
+          if (!interactiveLinks) {
+            return (
+              <span
+                key={index}
+                className="rounded-xs bg-[#e9f2ee] px-1.5 py-0.5 font-serif text-[0.95em] italic font-medium text-[var(--color-moss)]"
+              >
+                [[{title}]]
+              </span>
+            );
+          }
+
           return (
             <Link
               key={index}

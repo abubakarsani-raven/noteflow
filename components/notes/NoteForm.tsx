@@ -340,6 +340,7 @@ export function NoteForm({
             <NoteContentRenderer
               content={content}
               className="text-sm text-[var(--color-ink)] line-clamp-3"
+              interactiveLinks={false}
             />
           </div>
         )}
