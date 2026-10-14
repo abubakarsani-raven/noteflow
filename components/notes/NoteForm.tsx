@@ -11,6 +11,7 @@ import {
   type MentionItem,
 } from "@/components/notes/SmartMentionPopup";
 import { NoteContentRenderer } from "@/components/notes/NoteContentRenderer";
+import { getCaretCoordinates } from "@/lib/caret";
 import type { ActionState } from "@/lib/errors";
 
 const initial: ActionState = { ok: false };
@@ -45,15 +46,25 @@ export function NoteForm({
     query: string;
     startIndex: number;
     selectedIndex: number;
+    position: { top: number; left: number };
   }>({
     isOpen: false,
     query: "",
     startIndex: -1,
     selectedIndex: 0,
+    position: { top: 40, left: 20 },
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  function updateMentionPosition(textarea: HTMLTextAreaElement, atIndex: number) {
+    const coords = getCaretCoordinates(textarea, atIndex);
+    // Position menu directly underneath the cursor with padding
+    const top = Math.min(coords.top + coords.height + 6, textarea.clientHeight - 40);
+    const left = Math.max(10, Math.min(coords.left, textarea.clientWidth - 330));
+    return { top, left };
+  }
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const newContent = e.target.value;
@@ -69,11 +80,13 @@ export function NoteForm({
       const prevChar = lastAtPos > 0 ? textBeforeCursor[lastAtPos - 1] : " ";
 
       if ((prevChar === " " || prevChar === "\n") && !queryText.includes("\n")) {
+        const position = updateMentionPosition(e.target, lastAtPos);
         setMentionState({
           isOpen: true,
           query: queryText,
           startIndex: lastAtPos,
           selectedIndex: 0,
+          position,
         });
         return;
       }
@@ -113,7 +126,8 @@ export function NoteForm({
     const filtered = allItems.filter(
       (item) =>
         item.label.toLowerCase().includes(q) ||
-        (item.sublabel && item.sublabel.toLowerCase().includes(q))
+        (item.sublabel && item.sublabel.toLowerCase().includes(q)) ||
+        item.insertValue.toLowerCase().includes(q)
     );
 
     if (e.key === "ArrowDown") {
@@ -157,7 +171,6 @@ export function NoteForm({
     }, 0);
   }
 
-  // Check if content has special tokens to show live token preview
   const hasSpecialTokens = content.includes("@") || content.includes("[[");
 
   return (
@@ -191,37 +204,37 @@ export function NoteForm({
             Content
           </label>
 
-          {/* Segmented Tab Control */}
+          {/* Clean Segmented Tab Control without emojis */}
           <div className="inline-flex rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-0.5 text-xs font-medium">
             <button
               type="button"
               onClick={() => setActiveTab("edit")}
-              className={`rounded-md px-2.5 py-1 transition-all ${
+              className={`rounded-md px-3 py-1 transition-all ${
                 activeTab === "edit"
                   ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-2xs"
                   : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"
               }`}
             >
-              ✍️ Write
+              Write
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`rounded-md px-2.5 py-1 transition-all ${
+              className={`rounded-md px-3 py-1 transition-all ${
                 activeTab === "preview"
                   ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-2xs"
                   : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"
               }`}
             >
-              👁️ Formatted View
+              Preview
             </button>
           </div>
         </div>
 
-        {/* Quick Shortcut Toolbar */}
+        {/* Quick Helper Toolbar without emojis */}
         {activeTab === "edit" && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted)]">
-            <span className="text-[11px] font-medium">Insert token:</span>
+            <span className="text-[11px] font-medium">Insert:</span>
             <button
               type="button"
               onClick={() =>
@@ -233,9 +246,9 @@ export function NoteForm({
                   })}`
                 )
               }
-              className="inline-flex items-center gap-1 rounded-md border border-[#dfe5eb] bg-[#f1f4f8] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#3b4754] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+              className="inline-flex items-center rounded-md bg-[#f2ede4] px-2 py-0.5 font-mono text-[11px] font-medium text-[#473e34] transition-all hover:bg-[#e8e2d7]"
             >
-              📅 Date
+              Date
             </button>
             <button
               type="button"
@@ -248,30 +261,30 @@ export function NoteForm({
                   })}`
                 )
               }
-              className="inline-flex items-center gap-1 rounded-md border border-[#dfe5eb] bg-[#f1f4f8] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#3b4754] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+              className="inline-flex items-center rounded-md bg-[#f2ede4] px-2 py-0.5 font-mono text-[11px] font-medium text-[#473e34] transition-all hover:bg-[#e8e2d7]"
             >
-              ⏰ Time
+              Time
             </button>
             <button
               type="button"
               onClick={() => insertShortcut("@todo")}
-              className="inline-flex items-center gap-1 rounded-md border border-[#cbe5dc] bg-[#edf6f3] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#235849] shadow-2xs transition-all hover:border-[var(--color-moss)]"
+              className="inline-flex items-center rounded-md bg-[#e5f4ee] px-2 py-0.5 font-mono text-[11px] font-medium text-[#1e5847] transition-all hover:bg-[#d6ece4]"
             >
-              📌 @todo
+              @todo
             </button>
             <button
               type="button"
               onClick={() => insertShortcut("@important")}
-              className="inline-flex items-center gap-1 rounded-md border border-[#f5dfb8] bg-[#fdf6ec] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#8c5208] shadow-2xs transition-all hover:border-[var(--color-amber)]"
+              className="inline-flex items-center rounded-md bg-[#fdf0d8] px-2 py-0.5 font-mono text-[11px] font-medium text-[#8c5208] transition-all hover:bg-[#f8e5c2]"
             >
-              ⚡ @important
+              @important
             </button>
             <button
               type="button"
               onClick={() => insertShortcut("@idea")}
-              className="inline-flex items-center gap-1 rounded-md border border-[#d2def0] bg-[#f0f4fa] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#2b4c7e] shadow-2xs transition-all hover:border-blue-400"
+              className="inline-flex items-center rounded-md bg-[#e8eef8] px-2 py-0.5 font-mono text-[11px] font-medium text-[#244b7d] transition-all hover:bg-[#dbe5f3]"
             >
-              💡 @idea
+              @idea
             </button>
           </div>
         )}
@@ -287,11 +300,11 @@ export function NoteForm({
                 value={content}
                 onChange={handleContentChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Write your note here… (Type @ to insert special dates, tags, or note references)"
+                placeholder="Write your note here… (Type @ to open reference menu, or [[ to reference notes)"
                 className="w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 text-[15px] leading-relaxed shadow-2xs transition-colors focus:border-[var(--color-moss)]"
               />
 
-              {/* Floating Smart @ Mention Popup */}
+              {/* Floating Smart @ Mention Popup directly positioned at caret */}
               {mentionState.isOpen && (
                 <SmartMentionPopup
                   query={mentionState.query}
@@ -299,7 +312,7 @@ export function NoteForm({
                   selectedIndex={mentionState.selectedIndex}
                   onSelect={insertMention}
                   onClose={() => setMentionState((prev) => ({ ...prev, isOpen: false }))}
-                  position={{ top: 35, left: 15 }}
+                  position={mentionState.position}
                 />
               )}
             </>
@@ -311,18 +324,18 @@ export function NoteForm({
               ) : (
                 <p className="italic text-[var(--color-muted)]">No content to preview yet.</p>
               )}
-              {/* Keep a hidden input for form submission when in preview tab */}
+              {/* Keep hidden input for form submission when in preview tab */}
               <input type="hidden" name="content" value={content} />
             </div>
           )}
         </div>
 
-        {/* Live Highlight Token Strip (shown in edit mode if tokens are present) */}
+        {/* Live Highlight Strip in edit mode if tokens are present */}
         {activeTab === "edit" && hasSpecialTokens && (
-          <div className="mt-2.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-2xs">
+          <div className="mt-2.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-3">
             <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-[var(--color-muted)] uppercase tracking-wider">
-              <span>Live Formatted Tokens Preview</span>
-              <span className="text-[10px] text-[var(--color-moss)]">styled with custom font</span>
+              <span>Highlighted Text Preview</span>
+              <span className="font-mono text-[10px] text-[var(--color-moss)]">formatted</span>
             </div>
             <NoteContentRenderer
               content={content}

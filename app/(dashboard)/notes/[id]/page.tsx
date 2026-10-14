@@ -46,8 +46,8 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
             {note.title}
           </h1>
           {note.isPinned && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-[var(--color-amber)] border border-amber-200">
-              📌 Pinned
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-[var(--color-amber)] border border-amber-200">
+              Pinned
             </span>
           )}
         </div>

@@ -34,10 +34,9 @@ export function NoteContentRenderer({
             <Link
               key={index}
               href={`/dashboard?q=${encodeURIComponent(title)}`}
-              className="group/link inline-flex items-center gap-1.5 rounded-md border border-[#cadad3] bg-[#edf4f1] px-2 py-0.5 font-serif text-[14px] italic font-medium text-[var(--color-moss)] shadow-2xs transition-all hover:border-[var(--color-moss)] hover:bg-[var(--color-moss)] hover:text-white hover:shadow-xs"
+              className="rounded-xs bg-[#e9f2ee] px-1.5 py-0.5 font-serif text-[0.95em] italic font-medium text-[var(--color-moss)] transition-colors hover:underline hover:bg-[#dcebe5]"
             >
-              <span className="not-italic text-[11px] opacity-75">§</span>
-              <span>{title}</span>
+              [[{title}]]
             </Link>
           );
         }
@@ -45,81 +44,74 @@ export function NoteContentRenderer({
         // 2. Date or Time tokens
         if (
           part.startsWith("@") &&
-          (part.includes(",") || part.includes(":") || part.includes("-") && part.length === 11)
+          (part.includes(",") || part.includes(":") || (part.includes("-") && part.length === 11))
         ) {
-          const isTime = part.includes(":");
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#dfe5eb] bg-[#f1f4f8] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[#3b4754] shadow-2xs"
+              className="rounded-xs bg-[#f2ede4] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[#473e34] select-text"
             >
-              <span className="text-[10px] opacity-70">{isTime ? "⏰" : "📅"}</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
-        // 3. Priority / Action tokens
+        // 3. Priority / Action / Category tokens
         const lower = part.toLowerCase();
 
         if (lower === "@important" || lower === "@urgent" || lower === "@priority") {
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#f5dfb8] bg-[#fdf6ec] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[#8c5208] shadow-2xs"
+              className="rounded-xs bg-[#fdf0d8] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[#8c5208] select-text"
             >
-              <span className="text-[11px]">⚡</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
         if (lower === "@todo" || lower === "@task") {
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#cbe5dc] bg-[#edf6f3] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[#235849] shadow-2xs"
+              className="rounded-xs bg-[#e5f4ee] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[#1e5847] select-text"
             >
-              <span className="text-[11px]">📌</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
         if (lower === "@idea" || lower === "@insight") {
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#d2def0] bg-[#f0f4fa] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[#2b4c7e] shadow-2xs"
+              className="rounded-xs bg-[#e8eef8] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[#244b7d] select-text"
             >
-              <span className="text-[11px]">💡</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
         if (lower === "@follow-up" || lower === "@later") {
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#e1d5ec] bg-[#f7f3fa] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[#5e3880] shadow-2xs"
+              className="rounded-xs bg-[#f1ebf7] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[#573677] select-text"
             >
-              <span className="text-[11px]">🔁</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
         // 4. Any other @mention / @tag
         if (part.startsWith("@") && part.length > 1) {
           return (
-            <span
+            <mark
               key={index}
-              className="inline-flex items-center gap-1 rounded-md border border-[#dfe3e8] bg-[#f5f6f8] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-tight text-[var(--color-ink)] shadow-2xs"
+              className="rounded-xs bg-[#edeae4] px-1.5 py-0.5 font-mono text-[0.9em] font-medium tracking-tight text-[var(--color-ink)] select-text"
             >
-              <span className="text-[11px] text-[var(--color-moss)]">@</span>
-              <span>{part.slice(1)}</span>
-            </span>
+              {part}
+            </mark>
           );
         }
 
